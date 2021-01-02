@@ -33,7 +33,9 @@ let balancer = new RedisFunctionsBalancer([A, B, C], redisClient);
 balancer.setMethods([A, B]);
 // ... //
 // Get async iterator {done, value}
-while ( (foo = await balancer.getAsyncIterator().next()) && !foo.done) {
+let iterator = await balancer.getAsyncIterator();
+
+while ( (foo = await iterator.next()) && !foo.done) {
     // Your function A|B|C will be here evenly
     let method = foo.value;
     
