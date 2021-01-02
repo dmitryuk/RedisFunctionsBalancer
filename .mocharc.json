@@ -1,0 +1,7 @@
+{
+  "extension": ["ts"],
+  "exit": true,
+  "recursive": true,
+  "require": ["ts-node/register"],
+  "inspect": "0.0.0.0:9231"
+}

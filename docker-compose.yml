@@ -1,0 +1,14 @@
+version: "3.5"
+services:
+  redis:
+    image: redis:alpine
+    depends_on:
+      - node
+  node:
+    image: node:latest
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: "sleep 100"
+    ports:
+      - 9231:9231

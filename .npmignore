@@ -1,0 +1,8 @@
+test
+tsconfig.json
+.mocharc.json
+LICENCE
+node_modules
+.gitignore
+docker-compose.yml
+package-lock.json
