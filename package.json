@@ -1,12 +1,13 @@
 {
-  "name": "redis-function-balancer",
+  "name": "redis-functions-balancer",
   "version": "1.0.0",
   "description": "Balance NodeJs functions with Redis",
-  "main": "index.js",
+  "repository": "https://github.com/dmitryuk/RedisFunctionsBalancer",
+  "main": "index.ts",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha"
   },
-  "keywords": [],
+  "keywords": ["redis", "Typescript", "balance", "nodejs"],
   "author": "",
   "license": "ISC",
   "dependencies": {
