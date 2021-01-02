@@ -13,7 +13,7 @@ Ready to use with TypeScript and JavaScript.
 
 ## Installation
 ```
-npm install @coden/redis-functions-balancer --save-prod
+npm install redis-functions-balancer --save-prod
 ```
 
 ## Usage
