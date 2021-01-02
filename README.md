@@ -1,5 +1,5 @@
 # Redis functions balancer
-[![NPM](https://nodei.co/xakzona/redis-functions-balancer.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/coden/redis-functions-balancer)
+[![NPM](https://nodei.co/npm/redis-functions-balancer.png)](https://nodei.co/npm/redis-functions-balancer/)
 
 Balance executable NodeJs function with redis.
 
