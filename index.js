@@ -56,13 +56,13 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var util_1 = require("util");
-var CallableBalancer = /** @class */ (function () {
+var RedisFunctionsBalancer = /** @class */ (function () {
     /**
      *
      * @param methods not empty array of functions
      * @param redisClient
      */
-    function CallableBalancer(methods, redisClient) {
+    function RedisFunctionsBalancer(methods, redisClient) {
         this._STORE_PREFIX = 'balancer';
         this.INC_VALUE = 1;
         this._redisClient = redisClient;
@@ -76,16 +76,16 @@ var CallableBalancer = /** @class */ (function () {
             zIncRbyAsync: util_1.promisify(redisClient.zincrby).bind(this._redisClient),
         };
     }
-    CallableBalancer.prototype.setMethods = function (methods) {
+    RedisFunctionsBalancer.prototype.setMethods = function (methods) {
         this._methods = methods;
         this._storeKey = this.makeStoreKey(methods);
     };
-    CallableBalancer.prototype.increaseMethodRank = function (method, incValue) {
+    RedisFunctionsBalancer.prototype.increaseRank = function (func, incValue) {
         if (incValue === void 0) { incValue = this.INC_VALUE; }
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this._functions.zIncRbyAsync(this._storeKey, incValue, method.name)];
+                    case 0: return [4 /*yield*/, this._functions.zIncRbyAsync(this._storeKey, incValue, func.name)];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -93,7 +93,7 @@ var CallableBalancer = /** @class */ (function () {
             });
         });
     };
-    CallableBalancer.prototype.getAsyncIterator = function () {
+    RedisFunctionsBalancer.prototype.getAsyncIterator = function () {
         return __asyncGenerator(this, arguments, function getAsyncIterator_1() {
             var storedMethodNames, _i, storedMethodNames_1, methodName, _a, _b, method;
             return __generator(this, function (_c) {
@@ -112,7 +112,7 @@ var CallableBalancer = /** @class */ (function () {
                         if (!(_a < _b.length)) return [3 /*break*/, 8];
                         method = _b[_a];
                         if (!(method.name === methodName)) return [3 /*break*/, 7];
-                        return [4 /*yield*/, __await(this.increaseMethodRank(method, this.INC_VALUE))];
+                        return [4 /*yield*/, __await(this.increaseRank(method, this.INC_VALUE))];
                     case 4:
                         _c.sent();
                         return [4 /*yield*/, __await(method)];
@@ -134,7 +134,7 @@ var CallableBalancer = /** @class */ (function () {
     /**
      * Clear store
      */
-    CallableBalancer.prototype.resetStore = function () {
+    RedisFunctionsBalancer.prototype.resetStore = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -146,7 +146,7 @@ var CallableBalancer = /** @class */ (function () {
             });
         });
     };
-    CallableBalancer.prototype.getStoreKey = function () {
+    RedisFunctionsBalancer.prototype.getStoreKey = function () {
         return this._storeKey;
     };
     /**
@@ -154,7 +154,7 @@ var CallableBalancer = /** @class */ (function () {
      * @param methods
      * @protected
      */
-    CallableBalancer.prototype.makeStoreKey = function (methods) {
+    RedisFunctionsBalancer.prototype.makeStoreKey = function (methods) {
         var storeKeyArray = [this._STORE_PREFIX];
         methods.forEach(function (method) {
             storeKeyArray.push(method.name);
@@ -165,7 +165,7 @@ var CallableBalancer = /** @class */ (function () {
      * Returns an Array stored in Redis in Rank order
      * @private
      */
-    CallableBalancer.prototype.getRange = function () {
+    RedisFunctionsBalancer.prototype.getRange = function () {
         return __awaiter(this, void 0, void 0, function () {
             var storedMethodNames, args_1, result_1;
             var _a;
@@ -190,6 +190,6 @@ var CallableBalancer = /** @class */ (function () {
             });
         });
     };
-    return CallableBalancer;
+    return RedisFunctionsBalancer;
 }());
-exports.default = CallableBalancer;
+exports.default = RedisFunctionsBalancer;

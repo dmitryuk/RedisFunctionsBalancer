@@ -1,7 +1,7 @@
 # Redis functions balancer
 [![NPM](https://nodei.co/npm/redis-functions-balancer.png)](https://nodei.co/npm/redis-functions-balancer/)
 
-Balance executable NodeJs function with redis.
+Balance executes of NodeJs-functions with redis.
 
 For example, if you have several functions (A, B, C) doing the same things (http requests, long-running code), and you want to execute it evenly.
 
@@ -37,14 +37,14 @@ let iterator = await balancer.getAsyncIterator();
 
 while ( (foo = await iterator.next()) && !foo.done) {
     // Your function A|B|C will be here evenly
-    let method = foo.value;
+    let func = foo.value;
     
     try {
         // Executing on your way (
-        foo.value();
+        func();
     } catch (e) {
         // something happen badly and you want to postpone executes of the function next 10 runs
-        balancer.increaseMethodRank(method, 10);
+        balancer.increaseRank(func, 10);
     }
 }
 

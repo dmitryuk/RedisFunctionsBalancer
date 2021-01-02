@@ -8,9 +8,9 @@ type RedisFunctions = {
     zIncRbyAsync: (key: string, incValue: number, element: string) => Promise<string>;
 };
 
-export default class CallableBalancer {
+export default class RedisFunctionsBalancer<T extends Function> {
     private _storeKey: string;
-    private _methods: Array<Function>;
+    private _methods: Array<T>;
     private readonly _STORE_PREFIX = 'balancer';
     private readonly _redisClient: RedisClient;
     private readonly INC_VALUE = 1;
@@ -22,7 +22,7 @@ export default class CallableBalancer {
      * @param methods not empty array of functions
      * @param redisClient
      */
-    constructor(methods: Array<Function>, redisClient: RedisClient) {
+    constructor(methods: Array<T>, redisClient: RedisClient) {
         this._redisClient = redisClient;
         this._methods = methods;
         this._storeKey = this.makeStoreKey(methods);
@@ -36,23 +36,23 @@ export default class CallableBalancer {
         };
     }
 
-    public setMethods(methods: Array<Function>) {
+    public setMethods(methods: Array<T>) {
         this._methods = methods;
         this._storeKey = this.makeStoreKey(methods);
     }
 
-    public async increaseMethodRank(method: Function, incValue: number = this.INC_VALUE) {
-        await this._functions.zIncRbyAsync(this._storeKey, incValue, method.name);
+    public async increaseRank(func: T, incValue: number = this.INC_VALUE) {
+        await this._functions.zIncRbyAsync(this._storeKey, incValue, func.name);
     }
 
-    public async* getAsyncIterator(): AsyncIterableIterator<Function> {
+    public async* getAsyncIterator(): AsyncIterableIterator<T> {
         let storedMethodNames = await this.getRange();
 
         // Redis store defined
         for (let methodName of storedMethodNames) {
             for (let method of this._methods) {
                 if (method.name === methodName) {
-                    await this.increaseMethodRank(method, this.INC_VALUE);
+                    await this.increaseRank(method, this.INC_VALUE);
                     yield method;
                 }
             }
@@ -75,9 +75,9 @@ export default class CallableBalancer {
      * @param methods
      * @protected
      */
-    protected makeStoreKey(methods: Array<Function>): string {
+    protected makeStoreKey(methods: Array<T>): string {
         let storeKeyArray: Array<string> = [this._STORE_PREFIX];
-        methods.forEach((method: Function) => {
+        methods.forEach((method: T) => {
             storeKeyArray.push(method.name);
         });
 

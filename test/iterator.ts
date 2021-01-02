@@ -1,4 +1,4 @@
-import CallableBalancer from "../index";
+import RedisFunctionsBalancer from "../index";
 import {beforeEach} from "mocha";
 import {promisify} from "util";
 import assert = require("assert");
@@ -11,11 +11,11 @@ const B = () => new Promise(() => console.log('B'));
 const C = () => new Promise(() => console.log('C'));
 
 let methods = [A, B, C];
-let balancer: CallableBalancer;
-let zrangeAsync = promisify(redisClient.zrange).bind(redisClient);
+let balancer: RedisFunctionsBalancer<Function>;
+let zRangeAsync = promisify(redisClient.zrange).bind(redisClient);
 describe('Test Callable Balancer', async function () {
     beforeEach(async () => {
-        balancer = new CallableBalancer(methods, redisClient)
+        balancer = new RedisFunctionsBalancer(methods, redisClient)
         await balancer.resetStore();
     });
 
@@ -37,24 +37,24 @@ describe('Test Callable Balancer', async function () {
 
     it('check redis state with iterator', async () => {
         let key = balancer.getStoreKey();
-        let result = await zrangeAsync(key, 0, -1);
+        let result = await zRangeAsync(key, 0, -1);
         assert.strictEqual(0, result.length);
         let iterator = balancer.getAsyncIterator();
-        result = await zrangeAsync(key, 0, -1);
+        result = await zRangeAsync(key, 0, -1);
         assert.strictEqual(0, result.length);
 
         let data = await iterator.next();
-        result = await zrangeAsync(key, 0, -1);
+        result = await zRangeAsync(key, 0, -1);
         assert.deepStrictEqual(['B', 'C', 'A'], result);
         assert.strictEqual(A, data.value);
 
         data = await iterator.next();
-        result = await zrangeAsync(key, 0, -1);
+        result = await zRangeAsync(key, 0, -1);
         assert.deepStrictEqual(['C', 'A', 'B'], result);
         assert.strictEqual(B, data.value);
 
         data = await iterator.next();
-        result = await zrangeAsync(key, 0, -1);
+        result = await zRangeAsync(key, 0, -1);
         assert.deepStrictEqual(['A', 'B', 'C'], result);
         assert.strictEqual(C, data.value);
     });
@@ -63,7 +63,7 @@ describe('Test Callable Balancer', async function () {
         let iterator = await balancer.getAsyncIterator(),
             data;
         await iterator.next();
-        await balancer.increaseMethodRank(B, 2);
+        await balancer.increaseRank(B, 2);
 
         iterator = await balancer.getAsyncIterator();
         data = await iterator.next();
