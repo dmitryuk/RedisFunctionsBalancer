@@ -18,7 +18,7 @@ npm install redis-functions-balancer --save-prod
 
 ## Usage
 ```typescript
-import CallableBalancer from "@coden/redis-functions-balancer";
+import RedisFunctionsBalancer from "redis-functions-balancer";
 const redis = require("redis");
 const redisClient = redis.createClient(6379, 'redis');
 
@@ -28,7 +28,7 @@ const A = () => {};
 const B = () => {};
 const C = () => {};
 // ... //
-let balancer = new CallableBalancer([A, B, C], redisClient);
+let balancer = new RedisFunctionsBalancer([A, B, C], redisClient);
 // or reuse balancer variable with another functions
 balancer.setMethods([A, B]);
 // ... //

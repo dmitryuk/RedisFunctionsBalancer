@@ -1,6 +1,6 @@
 {
   "name": "redis-functions-balancer",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Balance NodeJs functions with Redis",
   "repository": "https://github.com/dmitryuk/RedisFunctionsBalancer",
   "main": "index.ts",
