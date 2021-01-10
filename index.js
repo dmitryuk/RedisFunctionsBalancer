@@ -8,33 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
 var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
 var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
     if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
@@ -47,27 +20,20 @@ var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _ar
     function reject(value) { resume("throw", value); }
     function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
 };
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var util_1 = require("util");
-var RedisFunctionsBalancer = /** @class */ (function () {
+const util_1 = require("util");
+class RedisBalancer {
     /**
      *
-     * @param methods not empty array of functions
+     * @param data not empty array of functions
      * @param redisClient
      */
-    function RedisFunctionsBalancer(methods, redisClient) {
+    constructor(data, redisClient) {
         this._STORE_PREFIX = 'balancer';
         this.INC_VALUE = 1;
         this._redisClient = redisClient;
-        this._methods = methods;
-        this._storeKey = this.makeStoreKey(methods);
+        this._data = data;
+        this._storeKey = this.makeStoreKey(data);
         // Initialize Redis functions as async await
         this._functions = {
             delAsync: util_1.promisify(redisClient.DEL).bind(this._redisClient),
@@ -76,120 +42,75 @@ var RedisFunctionsBalancer = /** @class */ (function () {
             zIncRbyAsync: util_1.promisify(redisClient.zincrby).bind(this._redisClient),
         };
     }
-    RedisFunctionsBalancer.prototype.setMethods = function (methods) {
-        this._methods = methods;
-        this._storeKey = this.makeStoreKey(methods);
-    };
-    RedisFunctionsBalancer.prototype.increaseRank = function (func, incValue) {
-        if (incValue === void 0) { incValue = this.INC_VALUE; }
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this._functions.zIncRbyAsync(this._storeKey, incValue, func.name)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
-            });
+    setData(data) {
+        this._data = data;
+        this._storeKey = this.makeStoreKey(data);
+    }
+    increaseRank(record, incValue = this.INC_VALUE) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let key = this._data.indexOf(record);
+            return this.increaseRankByIndex(key, incValue);
         });
-    };
-    RedisFunctionsBalancer.prototype.getAsyncIterator = function () {
-        return __asyncGenerator(this, arguments, function getAsyncIterator_1() {
-            var storedMethodNames, _i, storedMethodNames_1, methodName, _a, _b, method;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0: return [4 /*yield*/, __await(this.getRange())];
-                    case 1:
-                        storedMethodNames = _c.sent();
-                        _i = 0, storedMethodNames_1 = storedMethodNames;
-                        _c.label = 2;
-                    case 2:
-                        if (!(_i < storedMethodNames_1.length)) return [3 /*break*/, 9];
-                        methodName = storedMethodNames_1[_i];
-                        _a = 0, _b = this._methods;
-                        _c.label = 3;
-                    case 3:
-                        if (!(_a < _b.length)) return [3 /*break*/, 8];
-                        method = _b[_a];
-                        if (!(method.name === methodName)) return [3 /*break*/, 7];
-                        return [4 /*yield*/, __await(this.increaseRank(method, this.INC_VALUE))];
-                    case 4:
-                        _c.sent();
-                        return [4 /*yield*/, __await(method)];
-                    case 5: return [4 /*yield*/, _c.sent()];
-                    case 6:
-                        _c.sent();
-                        _c.label = 7;
-                    case 7:
-                        _a++;
-                        return [3 /*break*/, 3];
-                    case 8:
-                        _i++;
-                        return [3 /*break*/, 2];
-                    case 9: return [2 /*return*/];
-                }
-            });
+    }
+    increaseRankByIndex(index, incValue = this.INC_VALUE) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._functions.zIncRbyAsync(this._storeKey, incValue, index.toString());
         });
-    };
-    /**
-     * Clear store
-     */
-    RedisFunctionsBalancer.prototype.resetStore = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this._functions.delAsync(this._storeKey)];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
+    }
+    getAsyncIterator() {
+        return __asyncGenerator(this, arguments, function* getAsyncIterator_1() {
+            let storedData = yield __await(this.getRange());
+            // Redis store defined
+            for (let storedKey of storedData) {
+                for (let [key, record] of this._data.entries()) {
+                    if (storedKey === key.toString()) {
+                        yield __await(this.increaseRankByIndex(key, this.INC_VALUE));
+                        yield yield __await(record);
+                    }
                 }
-            });
+            }
         });
-    };
-    RedisFunctionsBalancer.prototype.getStoreKey = function () {
+    }
+    resetStore() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._functions.delAsync(this._storeKey);
+        });
+    }
+    getStoreKey() {
         return this._storeKey;
-    };
+    }
     /**
-     * Return redis key to store list of methods with ranks
-     * @param methods
+     * Return redis key to store list of data with ranks
+     * @param data
      * @protected
      */
-    RedisFunctionsBalancer.prototype.makeStoreKey = function (methods) {
-        var storeKeyArray = [this._STORE_PREFIX];
-        methods.forEach(function (method) {
-            storeKeyArray.push(method.name);
+    makeStoreKey(data) {
+        let storeKeyArray = [this._STORE_PREFIX];
+        data.forEach((method, index) => {
+            storeKeyArray.push(index.toString());
         });
         return storeKeyArray.join('.');
-    };
+    }
     /**
      * Returns an Array stored in Redis in Rank order
      * @private
      */
-    RedisFunctionsBalancer.prototype.getRange = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var storedMethodNames, args_1, result_1;
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0: return [4 /*yield*/, this._functions.zRangeAsync(this._storeKey, 0, -1)];
-                    case 1:
-                        storedMethodNames = _b.sent();
-                        if (!(storedMethodNames.length !== this._methods.length)) return [3 /*break*/, 3];
-                        args_1 = [], result_1 = [];
-                        this._methods.forEach(function (method) {
-                            // Default rank is 1
-                            args_1.push("1", method.name);
-                            result_1.push(method.name);
-                        });
-                        return [4 /*yield*/, (_a = this._functions).zAddAsync.apply(_a, __spreadArrays([this._storeKey, 'NX'], args_1))];
-                    case 2:
-                        _b.sent();
-                        return [2 /*return*/, result_1];
-                    case 3: return [2 /*return*/, storedMethodNames];
-                }
-            });
+    getRange() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let storedMethodNames = yield this._functions.zRangeAsync(this._storeKey, 0, -1);
+            // If Redis store is not initialized yield in default order
+            if (storedMethodNames.length !== this._data.length) {
+                let args = [], result = [];
+                this._data.forEach((record, index) => {
+                    // Default rank is 1
+                    args.push("1", index.toString());
+                    result.push(index.toString());
+                });
+                yield this._functions.zAddAsync(this._storeKey, 'NX', ...args);
+                return result;
+            }
+            return storedMethodNames;
         });
-    };
-    return RedisFunctionsBalancer;
-}());
-exports.default = RedisFunctionsBalancer;
+    }
+}
+exports.default = RedisBalancer;

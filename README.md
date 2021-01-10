@@ -1,7 +1,7 @@
 # Redis functions balancer
 [![NPM](https://nodei.co/npm/redis-functions-balancer.png)](https://nodei.co/npm/redis-functions-balancer/)
 
-Balance executes of NodeJs-functions with redis.
+Balance executes of NodeJs-functions or anything with redis.
 
 For example, if you have several functions (A, B, C) doing the same things (http requests, long-running code), and you want to execute it evenly.
 
@@ -16,9 +16,9 @@ Ready to use with TypeScript and JavaScript.
 npm install redis-functions-balancer --save-prod
 ```
 
-## Usage
+## Example of usage
 ```typescript
-import RedisFunctionsBalancer from "redis-functions-balancer";
+import RedisBalancer from "redis-functions-balancer";
 const redis = require("redis");
 const redisClient = redis.createClient(6379, 'redis');
 
@@ -28,9 +28,9 @@ const A = () => {};
 const B = () => {};
 const C = () => {};
 // ... //
-let balancer = new RedisFunctionsBalancer([A, B, C], redisClient);
+let balancer = new RedisBalancer([A, B, C], redisClient);
 // or reuse balancer variable with another functions
-balancer.setMethods([A, B]);
+balancer.setData([A, B]);
 // ... //
 // Get async iterator {done, value}
 let iterator = await balancer.getAsyncIterator();

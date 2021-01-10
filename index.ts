@@ -8,9 +8,9 @@ type RedisFunctions = {
     zIncRbyAsync: (key: string, incValue: number, element: string) => Promise<string>;
 };
 
-export default class RedisFunctionsBalancer<T extends Function> {
+export default class RedisBalancer<T> {
     private _storeKey: string;
-    private _methods: Array<T>;
+    private _data: Array<T>;
     private readonly _STORE_PREFIX = 'balancer';
     private readonly _redisClient: RedisClient;
     private readonly INC_VALUE = 1;
@@ -19,13 +19,13 @@ export default class RedisFunctionsBalancer<T extends Function> {
 
     /**
      *
-     * @param methods not empty array of functions
+     * @param data not empty array of functions
      * @param redisClient
      */
-    constructor(methods: Array<T>, redisClient: RedisClient) {
+    constructor(data: Array<T>, redisClient: RedisClient) {
         this._redisClient = redisClient;
-        this._methods = methods;
-        this._storeKey = this.makeStoreKey(methods);
+        this._data = data;
+        this._storeKey = this.makeStoreKey(data);
 
         // Initialize Redis functions as async await
         this._functions = {
@@ -36,32 +36,34 @@ export default class RedisFunctionsBalancer<T extends Function> {
         };
     }
 
-    public setMethods(methods: Array<T>) {
-        this._methods = methods;
-        this._storeKey = this.makeStoreKey(methods);
+    public setData(data: Array<T>) {
+        this._data = data;
+        this._storeKey = this.makeStoreKey(data);
     }
 
-    public async increaseRank(func: T, incValue: number = this.INC_VALUE) {
-        await this._functions.zIncRbyAsync(this._storeKey, incValue, func.name);
+    public async increaseRank(record: T, incValue: number = this.INC_VALUE) {
+        let key = this._data.indexOf(record);
+        return this.increaseRankByIndex(key, incValue)
+    }
+
+    protected async increaseRankByIndex(index: number, incValue: number = this.INC_VALUE) {
+        await this._functions.zIncRbyAsync(this._storeKey, incValue, index.toString());
     }
 
     public async* getAsyncIterator(): AsyncIterableIterator<T> {
-        let storedMethodNames = await this.getRange();
+        let storedData = await this.getRange();
 
         // Redis store defined
-        for (let methodName of storedMethodNames) {
-            for (let method of this._methods) {
-                if (method.name === methodName) {
-                    await this.increaseRank(method, this.INC_VALUE);
-                    yield method;
+        for (let storedKey of storedData) {
+            for (let [key, record] of this._data.entries()) {
+                if (storedKey === key.toString())  {
+                    await this.increaseRankByIndex(key, this.INC_VALUE);
+                    yield record;
                 }
             }
         }
     }
 
-    /**
-     * Clear store
-     */
     public async resetStore(): Promise<void> {
         await this._functions.delAsync(this._storeKey);
     }
@@ -71,14 +73,14 @@ export default class RedisFunctionsBalancer<T extends Function> {
     }
 
     /**
-     * Return redis key to store list of methods with ranks
-     * @param methods
+     * Return redis key to store list of data with ranks
+     * @param data
      * @protected
      */
-    protected makeStoreKey(methods: Array<T>): string {
+    protected makeStoreKey(data: Array<T>): string {
         let storeKeyArray: Array<string> = [this._STORE_PREFIX];
-        methods.forEach((method: T) => {
-            storeKeyArray.push(method.name);
+        data.forEach((method: T, index: number) => {
+            storeKeyArray.push(index.toString());
         });
 
         return storeKeyArray.join('.');
@@ -91,14 +93,14 @@ export default class RedisFunctionsBalancer<T extends Function> {
     protected async getRange(): Promise<Array<string>> {
         let storedMethodNames = await this._functions.zRangeAsync(this._storeKey, 0, -1) as Array<string>;
         // If Redis store is not initialized yield in default order
-        if (storedMethodNames.length !== this._methods.length) {
+        if (storedMethodNames.length !== this._data.length) {
             let args: Array<string> = [],
                 result: Array<string> = [];
 
-            this._methods.forEach(method => {
+            this._data.forEach((record, index) => {
                 // Default rank is 1
-                args.push("1", method.name);
-                result.push(method.name);
+                args.push("1", index.toString());
+                result.push(index.toString());
             });
             await this._functions.zAddAsync(this._storeKey, 'NX', ...args);
 

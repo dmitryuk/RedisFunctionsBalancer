@@ -1,4 +1,4 @@
-import RedisFunctionsBalancer from "../index";
+import RedisBalancer from "../index";
 import {beforeEach} from "mocha";
 import {promisify} from "util";
 import assert = require("assert");
@@ -11,18 +11,18 @@ const B = () => new Promise(() => console.log('B'));
 const C = () => new Promise(() => console.log('C'));
 
 let methods = [A, B, C];
-let balancer: RedisFunctionsBalancer<Function>;
+let balancer: RedisBalancer<Function>;
 let zRangeAsync = promisify(redisClient.zrange).bind(redisClient);
 describe('Test Callable Balancer', async function () {
     beforeEach(async () => {
-        balancer = new RedisFunctionsBalancer(methods, redisClient)
+        balancer = new RedisBalancer(methods, redisClient)
         await balancer.resetStore();
     });
 
     it('check store key generated', async () => {
-        assert.strictEqual('balancer.A.B.C', balancer.getStoreKey());
-        balancer.setMethods([C, B, A]);
-        assert.strictEqual('balancer.C.B.A', balancer.getStoreKey());
+        assert.strictEqual('balancer.0.1.2', balancer.getStoreKey());
+        balancer.setData([C, B, A]);
+        assert.strictEqual('balancer.0.1.2', balancer.getStoreKey());
     });
 
     it('check iterator first run in default order', async () => {
@@ -45,17 +45,17 @@ describe('Test Callable Balancer', async function () {
 
         let data = await iterator.next();
         result = await zRangeAsync(key, 0, -1);
-        assert.deepStrictEqual(['B', 'C', 'A'], result);
+        assert.deepStrictEqual(['1', '2', '0'], result);
         assert.strictEqual(A, data.value);
 
         data = await iterator.next();
         result = await zRangeAsync(key, 0, -1);
-        assert.deepStrictEqual(['C', 'A', 'B'], result);
+        assert.deepStrictEqual(['2', '0', '1'], result);
         assert.strictEqual(B, data.value);
 
         data = await iterator.next();
         result = await zRangeAsync(key, 0, -1);
-        assert.deepStrictEqual(['A', 'B', 'C'], result);
+        assert.deepStrictEqual(['0', '1', '2'], result);
         assert.strictEqual(C, data.value);
     });
 
