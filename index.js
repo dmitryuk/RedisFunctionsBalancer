@@ -27,10 +27,12 @@ class RedisBalancer {
      *
      * @param data not empty array of functions
      * @param redisClient
+     * @param redisPrefix
      */
-    constructor(data, redisClient) {
+    constructor(data, redisClient, redisPrefix) {
         this._STORE_PREFIX = 'balancer';
         this.INC_VALUE = 1;
+        this.redisPrefix = redisPrefix;
         this._redisClient = redisClient;
         this._data = data;
         this._storeKey = this.makeStoreKey(data);
@@ -85,7 +87,7 @@ class RedisBalancer {
      * @protected
      */
     makeStoreKey(data) {
-        let storeKeyArray = [this._STORE_PREFIX];
+        let storeKeyArray = [this._STORE_PREFIX, this.redisPrefix];
         data.forEach((method, index) => {
             storeKeyArray.push(index.toString());
         });

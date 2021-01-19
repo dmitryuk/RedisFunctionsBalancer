@@ -13,6 +13,7 @@ export default class RedisBalancer<T> {
     private _data: Array<T>;
     private readonly _STORE_PREFIX = 'balancer';
     private readonly _redisClient: RedisClient;
+    private readonly redisPrefix: string;
     private readonly INC_VALUE = 1;
 
     private readonly _functions: RedisFunctions;
@@ -21,8 +22,10 @@ export default class RedisBalancer<T> {
      *
      * @param data not empty array of functions
      * @param redisClient
+     * @param redisPrefix
      */
-    constructor(data: Array<T>, redisClient: RedisClient) {
+    constructor(data: Array<T>, redisClient: RedisClient, redisPrefix: string) {
+        this.redisPrefix = redisPrefix;
         this._redisClient = redisClient;
         this._data = data;
         this._storeKey = this.makeStoreKey(data);
@@ -78,7 +81,7 @@ export default class RedisBalancer<T> {
      * @protected
      */
     protected makeStoreKey(data: Array<T>): string {
-        let storeKeyArray: Array<string> = [this._STORE_PREFIX];
+        let storeKeyArray: Array<string> = [this._STORE_PREFIX, this.redisPrefix];
         data.forEach((method: T, index: number) => {
             storeKeyArray.push(index.toString());
         });
