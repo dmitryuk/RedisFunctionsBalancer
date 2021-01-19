@@ -28,7 +28,7 @@ const A = () => {};
 const B = () => {};
 const C = () => {};
 // ... //
-let balancer = new RedisBalancer([A, B, C], redisClient);
+let balancer = new RedisBalancer([A, B, C], redisClient, 'example-redis-key');
 // or reuse balancer variable with another functions
 balancer.setData([A, B]);
 // ... //

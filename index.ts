@@ -9,11 +9,9 @@ type RedisFunctions = {
 };
 
 export default class RedisBalancer<T> {
-    private _storeKey: string;
     private _data: Array<T>;
-    private readonly _STORE_PREFIX = 'balancer';
     private readonly _redisClient: RedisClient;
-    private readonly redisPrefix: string;
+    private redisPrefix: string;
     private readonly INC_VALUE = 1;
 
     private readonly _functions: RedisFunctions;
@@ -28,7 +26,6 @@ export default class RedisBalancer<T> {
         this.redisPrefix = redisPrefix;
         this._redisClient = redisClient;
         this._data = data;
-        this._storeKey = this.makeStoreKey(data);
 
         // Initialize Redis functions as async await
         this._functions = {
@@ -41,7 +38,6 @@ export default class RedisBalancer<T> {
 
     public setData(data: Array<T>) {
         this._data = data;
-        this._storeKey = this.makeStoreKey(data);
     }
 
     public async increaseRank(record: T, incValue: number = this.INC_VALUE) {
@@ -50,7 +46,7 @@ export default class RedisBalancer<T> {
     }
 
     protected async increaseRankByIndex(index: number, incValue: number = this.INC_VALUE) {
-        await this._functions.zIncRbyAsync(this._storeKey, incValue, index.toString());
+        await this._functions.zIncRbyAsync(this.redisPrefix, incValue, index.toString());
     }
 
     public async* getAsyncIterator(): AsyncIterableIterator<T> {
@@ -68,25 +64,15 @@ export default class RedisBalancer<T> {
     }
 
     public async resetStore(): Promise<void> {
-        await this._functions.delAsync(this._storeKey);
+        await this._functions.delAsync(this.redisPrefix);
     }
 
     public getStoreKey(): string {
-        return this._storeKey;
+        return this.redisPrefix;
     }
 
-    /**
-     * Return redis key to store list of data with ranks
-     * @param data
-     * @protected
-     */
-    protected makeStoreKey(data: Array<T>): string {
-        let storeKeyArray: Array<string> = [this._STORE_PREFIX, this.redisPrefix];
-        data.forEach((method: T, index: number) => {
-            storeKeyArray.push(index.toString());
-        });
-
-        return storeKeyArray.join('.');
+    public setStoreKey(key: string): void {
+        this.redisPrefix = key;
     }
 
     /**
@@ -94,7 +80,7 @@ export default class RedisBalancer<T> {
      * @private
      */
     protected async getRange(): Promise<Array<string>> {
-        let storedMethodNames = await this._functions.zRangeAsync(this._storeKey, 0, -1) as Array<string>;
+        let storedMethodNames = await this._functions.zRangeAsync(this.redisPrefix, 0, -1) as Array<string>;
         // If Redis store is not initialized yield in default order
         if (storedMethodNames.length !== this._data.length) {
             let args: Array<string> = [],
@@ -105,7 +91,7 @@ export default class RedisBalancer<T> {
                 args.push("1", index.toString());
                 result.push(index.toString());
             });
-            await this._functions.zAddAsync(this._storeKey, 'NX', ...args);
+            await this._functions.zAddAsync(this.redisPrefix, 'NX', ...args);
 
             return result;
         }

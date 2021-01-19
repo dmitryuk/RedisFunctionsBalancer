@@ -15,14 +15,15 @@ let balancer: RedisBalancer<Function>;
 let zRangeAsync = promisify(redisClient.zrange).bind(redisClient);
 describe('Test Callable Balancer', async function () {
     beforeEach(async () => {
-        balancer = new RedisBalancer(methods, redisClient)
+        balancer = new RedisBalancer(methods, redisClient, 'example');
         await balancer.resetStore();
     });
 
     it('check store key generated', async () => {
-        assert.strictEqual('balancer.0.1.2', balancer.getStoreKey());
+        assert.strictEqual('example', balancer.getStoreKey());
         balancer.setData([C, B, A]);
-        assert.strictEqual('balancer.0.1.2', balancer.getStoreKey());
+        balancer.setStoreKey('example2');
+        assert.strictEqual('example2', balancer.getStoreKey());
     });
 
     it('check iterator first run in default order', async () => {

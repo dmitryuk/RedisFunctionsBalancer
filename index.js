@@ -30,12 +30,10 @@ class RedisBalancer {
      * @param redisPrefix
      */
     constructor(data, redisClient, redisPrefix) {
-        this._STORE_PREFIX = 'balancer';
         this.INC_VALUE = 1;
         this.redisPrefix = redisPrefix;
         this._redisClient = redisClient;
         this._data = data;
-        this._storeKey = this.makeStoreKey(data);
         // Initialize Redis functions as async await
         this._functions = {
             delAsync: util_1.promisify(redisClient.DEL).bind(this._redisClient),
@@ -46,7 +44,6 @@ class RedisBalancer {
     }
     setData(data) {
         this._data = data;
-        this._storeKey = this.makeStoreKey(data);
     }
     increaseRank(record, incValue = this.INC_VALUE) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -56,7 +53,7 @@ class RedisBalancer {
     }
     increaseRankByIndex(index, incValue = this.INC_VALUE) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this._functions.zIncRbyAsync(this._storeKey, incValue, index.toString());
+            yield this._functions.zIncRbyAsync(this.redisPrefix, incValue, index.toString());
         });
     }
     getAsyncIterator() {
@@ -75,23 +72,14 @@ class RedisBalancer {
     }
     resetStore() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this._functions.delAsync(this._storeKey);
+            yield this._functions.delAsync(this.redisPrefix);
         });
     }
     getStoreKey() {
-        return this._storeKey;
+        return this.redisPrefix;
     }
-    /**
-     * Return redis key to store list of data with ranks
-     * @param data
-     * @protected
-     */
-    makeStoreKey(data) {
-        let storeKeyArray = [this._STORE_PREFIX, this.redisPrefix];
-        data.forEach((method, index) => {
-            storeKeyArray.push(index.toString());
-        });
-        return storeKeyArray.join('.');
+    setStoreKey(key) {
+        this.redisPrefix = key;
     }
     /**
      * Returns an Array stored in Redis in Rank order
@@ -99,7 +87,7 @@ class RedisBalancer {
      */
     getRange() {
         return __awaiter(this, void 0, void 0, function* () {
-            let storedMethodNames = yield this._functions.zRangeAsync(this._storeKey, 0, -1);
+            let storedMethodNames = yield this._functions.zRangeAsync(this.redisPrefix, 0, -1);
             // If Redis store is not initialized yield in default order
             if (storedMethodNames.length !== this._data.length) {
                 let args = [], result = [];
@@ -108,7 +96,7 @@ class RedisBalancer {
                     args.push("1", index.toString());
                     result.push(index.toString());
                 });
-                yield this._functions.zAddAsync(this._storeKey, 'NX', ...args);
+                yield this._functions.zAddAsync(this.redisPrefix, 'NX', ...args);
                 return result;
             }
             return storedMethodNames;
